@@ -98,7 +98,6 @@ function layout(string $page, string $title, string $desc, string $body, string 
 <link rel="stylesheet" href="/assets/site.css?v=<?= filemtime(ROOT . '/public/assets/site.css') ?>">
 <script type="application/ld+json"><?= json_ld() ?></script>
 <script src="/assets/site.js?v=<?= filemtime(ROOT . '/public/assets/site.js') ?>" defer></script>
-<?php if ($page === 'home'): ?><script src="/assets/fire.js?v=<?= filemtime(ROOT . '/public/assets/fire.js') ?>" defer></script><?php endif; ?>
 </head>
 <body class="page-<?= e($page) ?>">
 <a class="skip" href="#main"><?= e(t('skip')) ?></a>
@@ -251,11 +250,14 @@ function page_home(): void
     ob_start();
     ?>
 <section class="hero" id="hero">
-  <img class="hero__poster" alt="" fetchpriority="high"
-       src="/assets/fire/base-1100.webp"
-       srcset="/assets/fire/base-640.webp 640w, /assets/fire/base-1100.webp 1100w, /assets/fire/base-1920.webp 1920w"
-       sizes="(max-aspect-ratio: 1/1) 180vw, 100vw">
-  <canvas class="hero__fire" aria-hidden="true"></canvas>
+  <picture class="hero__still">
+    <source media="(max-width: 999px)" srcset="/assets/fire/poster-m.webp">
+    <img src="/assets/fire/poster.webp" alt="" fetchpriority="high">
+  </picture>
+  <video class="hero__video" autoplay muted loop playsinline preload="auto" aria-hidden="true" tabindex="-1">
+    <source media="(max-width: 999px)" src="/assets/fire/fogolar-m.mp4" type="video/mp4">
+    <source src="/assets/fire/fogolar.mp4" type="video/mp4">
+  </video>
   <div class="hero__shade"></div>
   <div class="hero__in wrap">
     <?= status_pill() ?>

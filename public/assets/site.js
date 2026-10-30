@@ -15,6 +15,77 @@
     onScroll();
   }
 
+  // Con "riduci movimento" il fuoco resta fermo
+  var fire = document.querySelector('.hero__video');
+  if (fire && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    fire.removeAttribute('autoplay');
+    fire.pause();
+  }
+
+  // Caroselli: lo scorrimento resta quello nativo, frecce e pallini lo comandano
+  document.querySelectorAll('.strip,.reviews__row').forEach(function (track) {
+    var slides = [].slice.call(track.children);
+    if (slides.length < 2) return;
+    var ctl = document.createElement('div');
+    ctl.className = 'car__ctl';
+    function button(label, text) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'car__btn';
+      b.setAttribute('aria-label', label);
+      b.textContent = text;
+      return b;
+    }
+    var it = document.documentElement.lang === 'it', de = document.documentElement.lang === 'de';
+    var prev = button(it ? 'Precedente' : de ? 'Zurück' : 'Previous', '←');
+    var next = button(it ? 'Successiva' : de ? 'Weiter' : 'Next', '→');
+    var useDots = slides.length <= 6, marks = [], count;
+    var mid = document.createElement('div');
+    if (useDots) {
+      mid.className = 'car__dots';
+      slides.forEach(function (s, i) {
+        var d = document.createElement('button');
+        d.type = 'button';
+        d.className = 'car__dot';
+        d.setAttribute('aria-label', String(i + 1));
+        d.addEventListener('click', function () { go(i); });
+        marks.push(d);
+        mid.appendChild(d);
+      });
+    } else {
+      count = mid;
+      mid.className = 'car__count';
+    }
+    ctl.appendChild(prev);
+    ctl.appendChild(mid);
+    ctl.appendChild(next);
+    track.parentNode.insertBefore(ctl, track.nextSibling);
+
+    var cur = 0;
+    function left(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+    function go(i) {
+      i = Math.max(0, Math.min(slides.length - 1, i));
+      var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      track.scrollTo({ left: left(i), behavior: reduce ? 'auto' : 'smooth' });
+    }
+    function update() {
+      var x = track.scrollLeft, end = track.scrollWidth - track.clientWidth;
+      cur = 0;
+      slides.forEach(function (s, i) { if (Math.abs(left(i) - x) < Math.abs(left(cur) - x)) cur = i; });
+      if (x >= end - 2) cur = slides.length - 1;
+      prev.disabled = x <= 2;
+      next.disabled = x >= end - 2;
+      marks.forEach(function (d, i) { d.setAttribute('aria-current', i === cur); });
+      if (count) count.textContent = (cur + 1) + ' / ' + slides.length;
+      ctl.hidden = end <= 2;
+    }
+    prev.addEventListener('click', function () { go(cur - 1); });
+    next.addEventListener('click', function () { go(cur + 1); });
+    track.addEventListener('scroll', function () { requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', update, { passive: true });
+    update();
+  });
+
   // Schede "Perché vieni in Carnia"
   var tabs = [].slice.call(document.querySelectorAll('[role=tab]'));
   function select(tab, focus) {

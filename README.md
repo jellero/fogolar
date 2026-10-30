@@ -8,7 +8,7 @@ PHP 8.1+ e SQLite, senza Composer né build: si pubblica copiando i file.
 - `public/` document root: `index.php`, risorse, foto caricate in `uploads/`
 - `app/` codice: `site.php` (pagine), `admin.php` (backoffice), `i18n.php` (testi IT/EN/DE), `schema.php` (database e contenuti iniziali)
 - `data/` database e sessioni, creati al primo avvio, mai versionati
-- `tools/assets.py` rigenera foto e texture del fuoco dagli originali
+- `tools/assets.py` rigenera le foto dagli originali, `tools/fire_loop.py` prepara il video del fuoco
 
 ## Provarlo in locale
 
@@ -30,6 +30,5 @@ I vecchi indirizzi (`/ristorante`, `/albergo`, `/appartamenti`, `/contatti`) res
 
 ## Il fuoco
 
-Non è un video: `public/assets/fire.js` anima in WebGL la foto reale. Quattro fotogrammi della vecchia GIF vengono deformati e
-fusi solo dove la maschera indica movimento, più scintille al tocco. Con "riduci movimento", "risparmio dati", senza WebGL o
-su dispositivi troppo lenti resta la foto fissa.
+In testata c'è un filmato vero, "Burning Firewood" di Raúl Muñoz Ruiz ([Pexels](https://www.pexels.com/video/burning-firewood-1717998/)).
+`tools/fire_loop.py` ne ricava il loop senza stacchi e le versioni per desktop e telefono. Con "riduci movimento" resta l'immagine ferma.
