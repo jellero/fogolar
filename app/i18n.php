@@ -9,6 +9,8 @@ const ROUTES = [
     'contatti' => ['it' => 'contatti', 'en' => 'contact', 'de' => 'kontakt'],
     'news' => ['it' => 'news', 'en' => 'news', 'de' => 'neuigkeiten'],
     'richiesta' => ['it' => 'richiesta', 'en' => 'enquiry', 'de' => 'anfrage'],
+    'privacy' => ['it' => 'privacy', 'en' => 'privacy', 'de' => 'datenschutz'],
+    'cookie' => ['it' => 'cookie', 'en' => 'cookies', 'de' => 'cookies'],
 ];
 
 function lang(?string $set = null): string
@@ -83,7 +85,7 @@ function dictionary(): array
         'ok_h' => 'Grazie, ricevuto!', 'ok_p' => 'Ti ricontattiamo appena possibile. Se è per oggi, faresti prima a chiamarci.', 'ok_home' => 'Torna alla home',
         'nf_h' => 'Qui il fuoco è spento', 'nf_p' => 'La pagina che cerchi non c’è più. Torna alla home.',
         'footer_vat' => 'P.IVA', 'footer_family' => 'Della famiglia Mainardis',
-        'follow' => 'Seguici su Facebook',
+        'follow' => 'Seguici su Facebook', 'legal_updated' => 'Ultimo aggiornamento:',
     ],
     'en' => [
         'nav_rest' => 'Restaurant', 'nav_hotel' => 'Hotel', 'nav_apt' => 'Apartments', 'nav_news' => 'News', 'nav_contact' => 'Contact', 'nav_menu' => 'Menu',
@@ -124,7 +126,7 @@ function dictionary(): array
         'ok_h' => 'Thank you, got it!', 'ok_p' => 'We’ll get back to you as soon as we can. If it’s for today, it’s quicker to call.', 'ok_home' => 'Back to home',
         'nf_h' => 'The fire’s out here', 'nf_p' => 'The page you’re looking for has gone. Head back home.',
         'footer_vat' => 'VAT', 'footer_family' => 'Run by the Mainardis family',
-        'follow' => 'Follow us on Facebook',
+        'follow' => 'Follow us on Facebook', 'legal_updated' => 'Last updated:',
     ],
     'de' => [
         'nav_rest' => 'Restaurant', 'nav_hotel' => 'Hotel', 'nav_apt' => 'Ferienwohnungen', 'nav_news' => 'Neuigkeiten', 'nav_contact' => 'Kontakt', 'nav_menu' => 'Menü',
@@ -165,7 +167,7 @@ function dictionary(): array
         'ok_h' => 'Danke, angekommen!', 'ok_p' => 'Wir melden uns so bald wie möglich. Wenn es um heute geht, rufen Sie am besten an.', 'ok_home' => 'Zur Startseite',
         'nf_h' => 'Hier ist das Feuer aus', 'nf_p' => 'Diese Seite gibt es nicht mehr. Zurück zur Startseite.',
         'footer_vat' => 'USt-IdNr.', 'footer_family' => 'Familie Mainardis',
-        'follow' => 'Folgen Sie uns auf Facebook',
+        'follow' => 'Folgen Sie uns auf Facebook', 'legal_updated' => 'Letzte Aktualisierung:',
     ],
     ];
 }

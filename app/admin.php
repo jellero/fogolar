@@ -750,7 +750,7 @@ function admin_settings(): void
     $days = [1 => 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
     $fields = [
         'phone' => ['Telefono', 'tel'], 'whatsapp' => ['WhatsApp (se c\'è, appare sul sito)', 'tel'], 'email' => ['Email pubblica', 'email'],
-        'notify_email' => ['Email dove ricevere le richieste', 'email'], 'address' => ['Indirizzo', 'text'], 'city' => ['Località', 'text'],
+        'notify_email' => ['Email dove ricevere le richieste', 'email'], 'legal_name' => ['Ragione sociale (per la privacy)', 'text'], 'address' => ['Indirizzo', 'text'], 'city' => ['Località', 'text'],
         'facebook' => ['Pagina Facebook', 'url'], 'tripadvisor' => ['Pagina Tripadvisor', 'url'],
     ];
     $ratings = ['rating_rest' => 'Voto ristorante (su 5)', 'rating_rest_count' => 'Numero di voti', 'rating_rest_source' => 'Fonte del voto'];

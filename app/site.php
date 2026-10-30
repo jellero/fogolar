@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/legal.php';
+
 function site_dispatch(?string $page, ?string $sub, int $depth): void
 {
     if ($page === 'news' && $depth === 2) {
@@ -133,8 +135,8 @@ function layout(string $page, string $title, string $desc, string $body, string 
   </div>
   <div class="wrap foot__legal">
     <span><?= e(t('footer_vat')) ?> <?= e(setting('vat')) ?></span>
-    <a href="<?= e(setting('privacy_url')) ?>" rel="noopener"><?= e(t('privacy')) ?></a>
-    <a href="<?= e(setting('cookie_url')) ?>" rel="noopener"><?= e(t('cookie')) ?></a>
+    <a href="<?= e(url('privacy')) ?>"><?= e(t('privacy')) ?></a>
+    <a href="<?= e(url('cookie')) ?>"><?= e(t('cookie')) ?></a>
     <?php if (setting('facebook')): ?><a href="<?= e(setting('facebook')) ?>" rel="noopener"><?= e(t('follow')) ?></a><?php endif; ?>
     <span>© <?= date('Y') ?> Al Fogolar · JDev</span>
   </div>
@@ -652,7 +654,7 @@ function page_richiesta(): void
       <label><span><?= e(t('q_email')) ?></span><input type="email" name="email" autocomplete="email" maxlength="160" value="<?= e($v['email']) ?>"></label>
       <p class="note"><?= e(t('q_contact_hint')) ?></p>
       <label><span><?= e(t('q_note')) ?></span><textarea name="note" rows="3" maxlength="1500" placeholder="<?= e(t('q_note_ph')) ?>"><?= e($v['note']) ?></textarea></label>
-      <p class="note"><?= e(t('q_privacy')) ?> <a href="<?= e(setting('privacy_url')) ?>" rel="noopener"><?= e(t('privacy')) ?></a>.</p>
+      <p class="note"><?= e(t('q_privacy')) ?> <a href="<?= e(url('privacy')) ?>"><?= e(t('privacy')) ?></a>.</p>
     </fieldset>
 
     <div class="ask__nav">
@@ -740,7 +742,7 @@ function site_sitemap(): void
             echo '</url>';
         }
     };
-    foreach (['home', 'ristorante', 'albergo', 'appartamenti', 'contatti', 'news', 'richiesta'] as $p) {
+    foreach (['home', 'ristorante', 'albergo', 'appartamenti', 'contatti', 'news', 'richiesta', 'privacy', 'cookie'] as $p) {
         $entry($p);
     }
     foreach (q('SELECT slug FROM news WHERE published = 1') as $n) {

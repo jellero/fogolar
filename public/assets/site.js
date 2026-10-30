@@ -22,7 +22,10 @@
     fire.pause();
   }
 
-  // Caroselli: lo scorrimento resta quello nativo, frecce e pallini lo comandano
+  // Caroselli: lo scorrimento resta quello nativo, frecce e pallini vanno solo dove la pista può arrivare
+  var LANG = document.documentElement.lang;
+  function say(it, en, de) { return LANG === 'de' ? de : LANG === 'en' ? en : it; }
+
   document.querySelectorAll('.strip,.reviews__row').forEach(function (track) {
     var slides = [].slice.call(track.children);
     if (slides.length < 2) return;
@@ -36,54 +39,168 @@
       b.textContent = text;
       return b;
     }
-    var it = document.documentElement.lang === 'it', de = document.documentElement.lang === 'de';
-    var prev = button(it ? 'Precedente' : de ? 'Zurück' : 'Previous', '←');
-    var next = button(it ? 'Successiva' : de ? 'Weiter' : 'Next', '→');
-    var useDots = slides.length <= 6, marks = [], count;
+    var prev = button(say('Precedente', 'Previous', 'Zurück'), '←');
+    var next = button(say('Successiva', 'Next', 'Weiter'), '→');
     var mid = document.createElement('div');
-    if (useDots) {
-      mid.className = 'car__dots';
-      slides.forEach(function (s, i) {
-        var d = document.createElement('button');
-        d.type = 'button';
-        d.className = 'car__dot';
-        d.setAttribute('aria-label', String(i + 1));
-        d.addEventListener('click', function () { go(i); });
-        marks.push(d);
-        mid.appendChild(d);
-      });
-    } else {
-      count = mid;
-      mid.className = 'car__count';
-    }
     ctl.appendChild(prev);
     ctl.appendChild(mid);
     ctl.appendChild(next);
     track.parentNode.insertBefore(ctl, track.nextSibling);
 
-    var cur = 0;
-    function left(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+    var stops = [], cur = 0, target = null, timer;
+
+    function measure() {
+      var end = track.scrollWidth - track.clientWidth, base = slides[0].offsetLeft;
+      stops = [];
+      slides.forEach(function (s) {
+        var x = Math.min(s.offsetLeft - base, end);
+        if (!stops.length || x - stops[stops.length - 1] > 4) stops.push(x);
+      });
+      ctl.hidden = stops.length < 2;
+      mid.textContent = '';
+      if (stops.length <= 6) {
+        mid.className = 'car__dots';
+        stops.forEach(function (x, i) {
+          var d = document.createElement('button');
+          d.type = 'button';
+          d.className = 'car__dot';
+          d.setAttribute('aria-label', String(i + 1));
+          d.addEventListener('click', function () { go(i); });
+          mid.appendChild(d);
+        });
+      } else {
+        mid.className = 'car__count';
+      }
+      show();
+    }
+    function nearest() {
+      var x = track.scrollLeft, best = 0;
+      stops.forEach(function (s, i) { if (Math.abs(s - x) < Math.abs(stops[best] - x)) best = i; });
+      return best;
+    }
+    function show() {
+      cur = target !== null ? target : nearest();
+      prev.disabled = cur === 0;
+      next.disabled = cur === stops.length - 1;
+      [].forEach.call(mid.children, function (d, i) { d.setAttribute('aria-current', i === cur); });
+      if (mid.className === 'car__count') mid.textContent = (cur + 1) + ' / ' + slides.length;
+    }
     function go(i) {
-      i = Math.max(0, Math.min(slides.length - 1, i));
-      var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      track.scrollTo({ left: left(i), behavior: reduce ? 'auto' : 'smooth' });
+      target = Math.max(0, Math.min(stops.length - 1, i));
+      var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      track.scrollTo({ left: stops[target], behavior: still ? 'auto' : 'smooth' });
+      show();
+      clearTimeout(timer);
+      timer = setTimeout(settle, 700);
     }
-    function update() {
-      var x = track.scrollLeft, end = track.scrollWidth - track.clientWidth;
-      cur = 0;
-      slides.forEach(function (s, i) { if (Math.abs(left(i) - x) < Math.abs(left(cur) - x)) cur = i; });
-      if (x >= end - 2) cur = slides.length - 1;
-      prev.disabled = x <= 2;
-      next.disabled = x >= end - 2;
-      marks.forEach(function (d, i) { d.setAttribute('aria-current', i === cur); });
-      if (count) count.textContent = (cur + 1) + ' / ' + slides.length;
-      ctl.hidden = end <= 2;
-    }
+    function settle() { target = null; show(); }
+
     prev.addEventListener('click', function () { go(cur - 1); });
     next.addEventListener('click', function () { go(cur + 1); });
-    track.addEventListener('scroll', function () { requestAnimationFrame(update); }, { passive: true });
-    addEventListener('resize', update, { passive: true });
-    update();
+    track.addEventListener('scroll', function () {
+      if (target === null) requestAnimationFrame(show);
+      else { clearTimeout(timer); timer = setTimeout(settle, 140); }
+    }, { passive: true });
+    // Il dito ha sempre la precedenza su un'animazione in corso
+    track.addEventListener('pointerdown', function () { clearTimeout(timer); target = null; }, { passive: true });
+    addEventListener('resize', measure, { passive: true });
+    addEventListener('load', measure);
+    measure();
+  });
+
+  // Galleria a schermo intero: sul telefono si sfoglia col dito, su desktop con frecce e tastiera
+  document.querySelectorAll('.strip').forEach(function (strip) {
+    var figures = [].slice.call(strip.querySelectorAll('figure'));
+    if (!figures.length) return;
+    var box, rail, count, opened = false, fromHistory = false;
+
+    function build() {
+      box = document.createElement('dialog');
+      box.className = 'lb';
+      box.setAttribute('aria-label', say('Galleria fotografica', 'Photo gallery', 'Fotogalerie'));
+      box.innerHTML = '<div class="lb__rail" tabindex="-1"></div><p class="lb__count" aria-live="polite"></p>' +
+        '<button type="button" class="lb__x">×</button><button type="button" class="lb__nav lb__nav--prev">←</button><button type="button" class="lb__nav lb__nav--next">→</button>';
+      rail = box.querySelector('.lb__rail');
+      count = box.querySelector('.lb__count');
+      box.querySelector('.lb__x').setAttribute('aria-label', say('Chiudi', 'Close', 'Schließen'));
+      box.querySelector('.lb__nav--prev').setAttribute('aria-label', say('Foto precedente', 'Previous photo', 'Vorheriges Foto'));
+      box.querySelector('.lb__nav--next').setAttribute('aria-label', say('Foto successiva', 'Next photo', 'Nächstes Foto'));
+      figures.forEach(function (f) {
+        var src = f.querySelector('img');
+        var slide = document.createElement('figure');
+        slide.className = 'lb__slide';
+        var img = document.createElement('img');
+        img.alt = src.alt;
+        img.decoding = 'async';
+        img.sizes = '100vw';
+        img.srcset = src.getAttribute('srcset');
+        img.src = src.getAttribute('src');
+        slide.appendChild(img);
+        if (src.alt) {
+          var cap = document.createElement('figcaption');
+          cap.textContent = src.alt;
+          slide.appendChild(cap);
+        }
+        rail.appendChild(slide);
+      });
+      document.body.appendChild(box);
+      rail.addEventListener('scroll', function () { requestAnimationFrame(update); }, { passive: true });
+      box.querySelector('.lb__x').addEventListener('click', close);
+      box.querySelector('.lb__nav--prev').addEventListener('click', function () { move(-1); });
+      box.querySelector('.lb__nav--next').addEventListener('click', function () { move(1); });
+      box.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+      box.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') { e.preventDefault(); move(1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1); }
+      });
+      rail.addEventListener('click', function (e) { if (e.target.tagName !== 'IMG') close(); });
+    }
+    function index() { return Math.round(rail.scrollLeft / (rail.clientWidth || 1)); }
+    function update() {
+      var i = index();
+      count.textContent = (i + 1) + ' / ' + figures.length;
+      box.querySelector('.lb__nav--prev').disabled = i === 0;
+      box.querySelector('.lb__nav--next').disabled = i === figures.length - 1;
+    }
+    function move(d) {
+      rail.scrollTo({ left: (index() + d) * rail.clientWidth, behavior: 'smooth' });
+    }
+    function open(i, back) {
+      if (!box) build();
+      back = back || figures[i];
+      box.showModal();
+      document.documentElement.classList.add('lb-open');
+      rail.style.scrollBehavior = 'auto';
+      rail.scrollLeft = i * rail.clientWidth;
+      rail.style.scrollBehavior = '';
+      update();
+      opened = true;
+      // Il tasto indietro del telefono chiude la galleria invece di lasciare la pagina
+      history.pushState({ lb: true }, '');
+      addEventListener('popstate', onPop);
+    }
+    function onPop() { fromHistory = true; close(); }
+    function close() {
+      if (!opened) return;
+      opened = false;
+      removeEventListener('popstate', onPop);
+      var i = index();
+      box.close();
+      document.documentElement.classList.remove('lb-open');
+      if (!fromHistory) history.back();
+      fromHistory = false;
+      figures[i].scrollIntoView({ inline: 'center', block: 'nearest' });
+      figures[i].focus({ preventScroll: true });
+    }
+    figures.forEach(function (f, i) {
+      f.tabIndex = 0;
+      f.setAttribute('role', 'button');
+      f.setAttribute('aria-label', say('Apri la foto: ', 'Open photo: ', 'Foto öffnen: ') + (f.querySelector('img').alt || (i + 1)));
+      f.addEventListener('click', function () { open(i); });
+      f.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(i); }
+      });
+    });
   });
 
   // Schede "Perché vieni in Carnia"
