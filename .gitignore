@@ -1,0 +1,6 @@
+data/*.sqlite*
+data/sessions/
+data/setup-token.txt
+public/uploads/*
+!public/uploads/.gitkeep
+.claude/
