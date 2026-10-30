@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/legal.php';
+require_once __DIR__ . '/push.php';
 
 function site_dispatch(?string $page, ?string $sub, int $depth): void
 {
@@ -707,7 +708,9 @@ function handle_request(array $v): array
         $v['kind'], $v['date_from'], $stay ? $v['date_to'] : null, $v['kind'] === 'tavolo' ? $v['slot'] : null,
         max(1, min(300, (int) $v['people'])), $v['name'], $v['phone'], $validEmail ? $v['email'] : '', mb_substr($v['note'], 0, 1500), lang(), $ip, date('Y-m-d H:i:s'),
     ]);
-    notify_owner($v, $stay, (int) db()->lastInsertId());
+    $id = (int) db()->lastInsertId();
+    notify_owner($v, $stay, $id);
+    push_new_request($v, $stay, $id);
     return [];
 }
 

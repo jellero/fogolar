@@ -27,6 +27,10 @@ function db(): PDO
         require __DIR__ . '/schema.php';
         install_schema($pdo);
     }
+    $pdo->exec('CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL,
+            device TEXT DEFAULT \'\', last_ok_at TEXT, created_at TEXT NOT NULL
+        )');
     return $pdo;
 }
 

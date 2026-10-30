@@ -43,6 +43,10 @@ function admin_dispatch(string $path): void
     q("DELETE FROM requests WHERE created_at < datetime('now', 'localtime', '-12 months')");
 
     $sub = substr($path, strlen('/admin'));
+    if (str_starts_with($sub, '/push/')) {
+        admin_push(substr($sub, 6));
+        return;
+    }
     match (true) {
         $sub === '' => admin_today(),
         $sub === '/richieste' => admin_requests(),
@@ -99,12 +103,19 @@ function admin_layout(string $title, string $body, string $active = '', bool $ba
 <link rel="stylesheet" href="/assets/admin.css?v=<?= filemtime(ROOT . '/public/assets/admin.css') ?>">
 <script src="/assets/admin.js?v=<?= filemtime(ROOT . '/public/assets/admin.js') ?>" defer></script>
 </head>
-<body<?= $bare ? ' class="bare"' : '' ?>>
+<body<?= $bare ? ' class="bare"' : ' data-csrf="' . e(csrf()) . '"' ?>>
 <?php if (!$bare): ?>
 <header class="ahead"><strong>Al Fogolar</strong><a href="/" target="_blank" rel="noopener">Vedi il sito ↗</a></header>
 <?php endif; ?>
 <main class="amain">
 <?php if ($flash): ?><p class="flash" role="status"><?= e($flash) ?></p><?php endif; ?>
+<?php if (!$bare): ?>
+<div class="pushbar" data-push-banner hidden>
+  <span data-push-text>Ricevi una notifica su questo dispositivo quando arriva una richiesta.</span>
+  <button class="abtn abtn--sm abtn--main" type="button" data-push-on>Attiva notifiche</button>
+  <button class="pushbar__x" type="button" data-push-later aria-label="Più tardi">×</button>
+</div>
+<?php endif; ?>
 <?= $body ?>
 </main>
 <?php if (!$bare): ?>
@@ -804,6 +815,17 @@ function admin_settings(): void
     ?>
 <h1>Altro</h1>
 <?= other_tabs('impostazioni') ?>
+<section class="acard" id="notifiche">
+  <h2>Notifiche</h2>
+  <p class="ahelp">Quando arriva una richiesta dal sito, questo telefono o computer ti avvisa anche a backoffice chiuso. Va attivato su ogni dispositivo.</p>
+  <p data-push-state></p>
+  <div class="arow">
+    <button class="abtn abtn--main" type="button" data-push-on>Attiva su questo dispositivo</button>
+    <form method="post" action="/admin/push/prova" data-push-test hidden><?= csrf_field() ?><button class="abtn">Invia una prova</button></form>
+    <button class="alink" type="button" data-push-off hidden>Disattiva su questo dispositivo</button>
+  </div>
+  <p class="ahelp">Dispositivi attivi: <?= (int) q('SELECT COUNT(*) FROM push_subscriptions')->fetchColumn() ?>. Su iPhone serve iOS 16.4 o successivo e il backoffice aggiunto alla schermata Home.</p>
+</section>
 <section class="acard">
   <h2>Orari settimanali</h2>
   <form method="post" class="aform"><?= csrf_field() ?>
@@ -848,4 +870,42 @@ function admin_settings(): void
 <form method="post" action="/admin/logout" class="adanger"><?= csrf_field() ?><button class="alink">Esci dal backoffice</button></form>
     <?php
     admin_layout('Orari e dati', ob_get_clean(), 'altro');
+}
+
+// ---------- Notifiche push ----------
+
+function admin_push(string $action): void
+{
+    require_once __DIR__ . '/push.php';
+    $post = $_SERVER['REQUEST_METHOD'] === 'POST';
+    if ($action === 'chiave') {
+        header('Content-Type: application/json');
+        echo json_encode(['key' => vapid_keys()['public']]);
+        return;
+    }
+    if ($action === 'iscrivi' && $post) {
+        $endpoint = (string) ($_POST['endpoint'] ?? '');
+        $p256dh = (string) ($_POST['p256dh'] ?? '');
+        $auth = (string) ($_POST['auth'] ?? '');
+        if (!str_starts_with($endpoint, 'https://') || strlen($endpoint) > 1000 || strlen(b64u_dec($p256dh)) !== 65 || strlen(b64u_dec($auth)) !== 16) {
+            http_response_code(422);
+            return;
+        }
+        q('INSERT INTO push_subscriptions(endpoint, p256dh, auth, device, created_at) VALUES(?,?,?,?,?)
+           ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth',
+            [$endpoint, $p256dh, $auth, mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 190), date('Y-m-d H:i:s')]);
+        http_response_code(204);
+        return;
+    }
+    if ($action === 'disiscrivi' && $post) {
+        q('DELETE FROM push_subscriptions WHERE endpoint = ?', [(string) ($_POST['endpoint'] ?? '')]);
+        http_response_code(204);
+        return;
+    }
+    if ($action === 'prova' && $post) {
+        $n = push_to_all('Al Fogolar', 'Le notifiche funzionano: qui arriveranno le nuove richieste.', '/admin/richieste', 'prova');
+        flash($n ? "Prova inviata a $n " . ($n === 1 ? 'dispositivo.' : 'dispositivi.') : 'Nessun dispositivo ha ricevuto la prova: riattiva le notifiche.');
+        redirect('/admin/impostazioni#notifiche');
+    }
+    admin_message('Pagina non trovata', 'Questa pagina non esiste.');
 }

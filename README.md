@@ -16,7 +16,7 @@ PHP 8.1+ e SQLite, senza Composer né build: si pubblica copiando i file.
 php -S localhost:8123 -t public tools/dev-router.php
 ```
 
-Servono le estensioni `pdo_sqlite`, `gd` (con WebP), `mbstring`, `fileinfo`.
+Servono le estensioni `pdo_sqlite`, `gd` (con WebP), `mbstring`, `fileinfo` e, per le notifiche, `openssl`.
 
 ## Pubblicazione su Plesk
 
@@ -32,3 +32,9 @@ I vecchi indirizzi (`/ristorante`, `/albergo`, `/appartamenti`, `/contatti`) res
 
 In testata c'è un filmato vero, "Burning Firewood" di Raúl Muñoz Ruiz ([Pexels](https://www.pexels.com/video/burning-firewood-1717998/)).
 `tools/fire_loop.py` ne ricava il loop senza stacchi e le versioni per desktop e telefono. Con "riduci movimento" resta l'immagine ferma.
+
+## Notifiche
+
+A ogni nuova richiesta il backoffice manda una notifica push ai dispositivi iscritti (Altro → Orari e dati), anche a backoffice chiuso.
+Funzionano solo in HTTPS o su localhost; su iPhone servono iOS 16.4+ e il backoffice aggiunto alla schermata Home.
+Prova del motore: `php tests/push_test.php`.
